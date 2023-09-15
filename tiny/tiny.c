@@ -178,7 +178,27 @@ void get_filetype(char *filename, char *filetype) { //filename 으로부터 file
     strcpy(filetype, "image/png");
   } else if (strstr(filename, ".jpg")) {
     strcpy(filetype, "image/jpeg");
+  //} else if (strstr(filename, ".mp4")) {
+    //strcpy(filetype, "???/mp4?")
+  //}
   } else {
     strcpy(filetype, "text/plain");
   }
+}
+
+void serve_dynamic(int fd, char *filename, char *cgiargs) {
+  char buf[MAXLINE], *emptylist[] = {NULL};
+
+  //HTTP res의 first part return
+  sprintf(buf, "HTTP/1.0 200 OK\r\n");
+  Rio_written(fd, buf, strlen(buf));
+  sprintf(buf, "Server: Tiny Web Server\r\n");
+  Rio_writen(fd, buf, strlen(buf));
+
+  if (Fork() == 0) { //동적 콘텐츠를 실행하고 결과를 return할 자식 프로세스
+    setenv("QUERY_STRING", cgiargs, 1);
+    Dup2(fd, STDOUT_FILENO); //redirect stdout to client
+    Execve(filename, emptylist, environ); //CGI program 실행
+  }
+  Wait(NULL); //자식 프로세스가 실행되고 결과를 출력할때까지 기다림
 }
