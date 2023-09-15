@@ -107,11 +107,41 @@ void read_requesthdrs(rio_t *rp) {
   char buf[MAXLINE];
 
   Rio_readlineb(rp, buf, MAXLINE);
-  
+
   while (strcmp(buf, "\r\n")) {
     Rio_readlineb(rp, buf, MAXLINE);
     printf("%s", buf);
   }
 
   return;
+}
+
+int parse_uri(char *uri, char *filename, char *cgiargs) {
+  char *ptr;
+
+  if (!strstr(uri, "cgi-bin")) { //정적 콘텐츠
+    strcpy(cgiargs, "");
+    strcpy(filename, ".");
+    strcat(filename, uri);
+
+    if (uri[strlen(uri)-1] == '/') {
+      strcat (filename, "home.html");
+    }
+
+    return 1;
+
+  } else { //동적 콘텐츠
+    ptr = index(uri, '?');
+
+    if (ptr) {
+      strcpy(cgiargs, ptr+1);
+      *ptr = '\0';
+    } else {
+      strcpy(cgiargs, "");
+    }
+
+    strcpy(filename, ".");
+    strcat(filename, uri);
+    return 0;
+  }
 }
