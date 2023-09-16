@@ -191,7 +191,7 @@ void serve_dynamic(int fd, char *filename, char *cgiargs) {
 
   //HTTP res의 first part return
   sprintf(buf, "HTTP/1.0 200 OK\r\n");
-  Rio_written(fd, buf, strlen(buf));
+  Rio_writen(fd, buf, strlen(buf));
   sprintf(buf, "Server: Tiny Web Server\r\n");
   Rio_writen(fd, buf, strlen(buf));
 
