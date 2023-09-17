@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
     exit(1);
   }
 	//listen socket open, 인자로 포트 번호를 넘겨줌
-    //Open_listenfd는 요청받은 준비가 된 듣기 식별자를 리턴(listenfd)
+  //Open_listenfd는 요청받은 준비가 된 듣기 식별자를 리턴(listenfd)
   listenfd = Open_listenfd(argv[1]); 
 	
     //무한루프 서버
@@ -66,7 +66,7 @@ void doit(int fd) {
   printf("%s", buf);
   sscanf(buf, "%s %s %s", method, uri, version); //버퍼에서 자료형을 읽음
   //GET이 아닌 메소드를 req했다면 error를 return 
-  if (strcasecmp(method, "GET")) {
+  if ((strcasecmp(method, "GET")) && (strcasecmp(method, "HEAD"))) { //숙제
     clienterror(fd, method, "501", "Not implementd", "Tiny does not implement this method.");
     return;
   }
@@ -195,12 +195,19 @@ void serve_static(int fd, char *filename, int filesize) {
 
   //client에게 res body 보내기
   //읽을 수 있는 파일로 열기(open read only)
+  //숙제: malloc으로 바꾸기
   srcfd = Open(filename, O_RDONLY, 0);
-  
-  srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0);
+  //malloc으로 가상 메모리 할당
+  srcp = (char *)malloc(filesize);
+  Rio_readn(srcfd, srcp, filesize);
   Close(srcfd);
   Rio_writen(fd, srcp, filesize);
-  Munmap(srcp, filesize);
+  free(srcp);
+  
+  // srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0);
+  // Close(srcfd);
+  // Rio_writen(fd, srcp, filesize);
+  // Munmap(srcp, filesize);
 }
 
 //filename 으로부터 file 의 형식을 알아내는 함수
