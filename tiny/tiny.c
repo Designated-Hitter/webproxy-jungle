@@ -11,9 +11,9 @@
 void doit(int fd);
 void read_requesthdrs(rio_t *rp);
 int parse_uri(char *uri, char *filename, char *cgiargs);
-void serve_static(int fd, char *filename, int filesize);
+void serve_static(int fd, char *filename, int filesize, char* method);
 void get_filetype(char *filename, char *filetype);
-void serve_dynamic(int fd, char *filename, char *cgiargs);
+void serve_dynamic(int fd, char *filename, char *cgiargs, char* method);
 void clienterror(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg);
 
 int main(int argc, char **argv) {
@@ -93,7 +93,7 @@ void doit(int fd) {
       return;
     }
     //static content 제공
-    serve_static(fd, filename, sbuf.st_size);
+    serve_static(fd, filename, sbuf.st_size, method);
   } else { //동적 콘텐츠 제공
     //(읽을 수 있는) 일반 파일인지, CGI 프로그램을 실행할 수 없으면 error return
     if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode)) {
@@ -101,7 +101,7 @@ void doit(int fd) {
       return;
     }
     //dynamic content 제공
-    serve_dynamic(fd, filename, cgiargs);
+    serve_dynamic(fd, filename, cgiargs, method);
   }
 }
 
@@ -174,7 +174,7 @@ int parse_uri(char *uri, char *filename, char *cgiargs) {
   }
 }
 
-void serve_static(int fd, char *filename, int filesize) {
+void serve_static(int fd, char *filename, int filesize, char* method) {
   int srcfd;
   char *srcp, filetype[MAXLINE], buf[MAXBUF];
 
@@ -193,21 +193,23 @@ void serve_static(int fd, char *filename, int filesize) {
   printf("Response headers:\n");
   printf("%s", buf);
 
-  //client에게 res body 보내기
-  //읽을 수 있는 파일로 열기(open read only)
-  //숙제: malloc으로 바꾸기
-  srcfd = Open(filename, O_RDONLY, 0);
-  //malloc으로 가상 메모리 할당
-  srcp = (char *)malloc(filesize);
-  Rio_readn(srcfd, srcp, filesize);
-  Close(srcfd);
-  Rio_writen(fd, srcp, filesize);
-  free(srcp);
-  
-  // srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0);
-  // Close(srcfd);
-  // Rio_writen(fd, srcp, filesize);
-  // Munmap(srcp, filesize);
+  if (strcasecmp(method, "HEAD") != 0) { //method 가 HEAD일 때 body를 보내지 않기 위함
+    //client에게 res body 보내기
+    //읽을 수 있는 파일로 열기(open read only)
+    //숙제: malloc으로 바꾸기
+    srcfd = Open(filename, O_RDONLY, 0);
+    //malloc으로 가상 메모리 할당
+    srcp = (char *)malloc(filesize);
+    Rio_readn(srcfd, srcp, filesize);
+    Close(srcfd);
+    Rio_writen(fd, srcp, filesize);
+    free(srcp);
+    
+    // srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0);
+    // Close(srcfd);
+    // Rio_writen(fd, srcp, filesize);
+    // Munmap(srcp, filesize);
+  }
 }
 
 //filename 으로부터 file 의 형식을 알아내는 함수
@@ -227,7 +229,7 @@ void get_filetype(char *filename, char *filetype) {
   }
 }
 
-void serve_dynamic(int fd, char *filename, char *cgiargs) {
+void serve_dynamic(int fd, char *filename, char *cgiargs, char *method) {
   char buf[MAXLINE], *emptylist[] = {NULL};
 
   //HTTP res의 first part return
@@ -236,10 +238,16 @@ void serve_dynamic(int fd, char *filename, char *cgiargs) {
   sprintf(buf, "Server: Tiny Web Server\r\n");
   Rio_writen(fd, buf, strlen(buf));
 
-  if (Fork() == 0) { //동적 콘텐츠를 실행하고 결과를 return할 자식 프로세스를 포크
+  if (strcasecmp(method, "HEAD") != 0) { //method 가 HEAD일 때 body를 보내지 않기 위함
+    
+    if (Fork() == 0) { //동적 콘텐츠를 실행하고 결과를 return할 자식 프로세스를 포크
     setenv("QUERY_STRING", cgiargs, 1);
     Dup2(fd, STDOUT_FILENO); //redirect stdout to client
     Execve(filename, emptylist, environ); //CGI program 실행
+    }
+
+    Wait(NULL); //자식 프로세스가 실행되고 결과를 출력하고 종료될 때까지 기다림
   }
-  Wait(NULL); //자식 프로세스가 실행되고 결과를 출력하고 종료될 때까지 기다림
+
+  
 }
