@@ -193,7 +193,7 @@ void serve_static(int fd, char *filename, int filesize, char* method) {
   printf("Response headers:\n");
   printf("%s", buf);
 
-  if (strcasecmp(method, "HEAD") != 0) { //method 가 HEAD일 때 body를 보내지 않기 위함
+  if (strcasecmp(method, "HEAD") != 0) { //숙제: method 가 HEAD일 때 body를 보내지 않기 위함
     //client에게 res body 보내기
     //읽을 수 있는 파일로 열기(open read only)
     //숙제: malloc으로 바꾸기
@@ -238,7 +238,7 @@ void serve_dynamic(int fd, char *filename, char *cgiargs, char *method) {
   sprintf(buf, "Server: Tiny Web Server\r\n");
   Rio_writen(fd, buf, strlen(buf));
 
-  if (strcasecmp(method, "HEAD") != 0) { //method 가 HEAD일 때 body를 보내지 않기 위함
+  if (strcasecmp(method, "HEAD") != 0) { //숙제: method 가 HEAD일 때 body를 보내지 않기 위함
     
     if (Fork() == 0) { //동적 콘텐츠를 실행하고 결과를 return할 자식 프로세스를 포크
     setenv("QUERY_STRING", cgiargs, 1);

@@ -12,12 +12,15 @@ int main(void) {
   if ((buf = getenv("QUERY_STRING")) != NULL) {
     p = strchr(buf, '&');
     *p = '\0';
-    strcpy(arg1, buf);
-    strcpy(arg2, p+1);
-    n1 = atoi(arg1);
-    n2 = atoi(arg2);
+    // strcpy(arg1, buf);
+    // strcpy(arg2, p+1);
+    // n1 = atoi(arg1);
+    // n2 = atoi(arg2);
+    sscanf(buf, "first=%d", &n1);
+    sscanf(p+1, "second=%d", &n2);
+
   }
-  //response body
+  //making response body 
   sprintf(content, "QUERY_STRING=%s", buf);
   sprintf(content, "Welcome to add.com ");
   sprintf(content, "%sTHE Internet addition portal.\r\n<p>", content);
@@ -25,9 +28,11 @@ int main(void) {
   sprintf(content, "%sThanks for visiting!\r\n", content);
   
   //HTTP response 만들기
+  //res headers
   printf("Connection: close\r\n");
   printf("Content-length: %d\r\n", (int)strlen(content));
   printf("content-type: text/html\r\n\r\n");
+  //res body
   printf("%s", content);
   fflush(stdout);
 
