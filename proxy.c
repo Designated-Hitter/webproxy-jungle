@@ -10,9 +10,9 @@ static const char *user_agent_hdr =
     "Firefox/10.0.3\r\n";
 static const char *new_version = "HTTP/1.0";
 
-void doit(int connfd);
-void do_request(int end_serverfd, char *method, char *uri_ptos, char *host);
-void do_response(int p_connfd, int end_serverfd);
+void do_it(int fd);
+void do_request(int p_clientfd, char *method, char *uri_ptos, char *host);
+void do_response(int p_connfd, int p_clientfd);
 int parse_uri(char *uri, char *uri_ptos, char *host, char *port);
 //이 함수는 쓰지를 않는데 선언을 안 해두면 채점이 안 된다...
 int parse_responsehdrs(rio_t *rp, int length);
@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
     Getnameinfo((SA *)&clientaddr, clientlen, hostname, MAXLINE, port, MAXLINE, 0);
     printf("Accepted connection from (%s, %s)\n", hostname, port);
 
-    doit(p_connfd);
+    do_it(p_connfd);
     Close(p_connfd);
   }
 
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 //HTTP request line from proxy to server
 //-> GET /index.html HTTP/1.0
 
-void doit (int p_connfd) {
+void do_it (int p_connfd) {
   int p_clientfd;
   
   char buf[MAXLINE], host[MAXLINE], port[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
@@ -118,7 +118,7 @@ void do_response(int p_connfd, int p_clientfd) {
 
   Rio_readinitb(&rio, p_clientfd);
   //buffer의 내용을 전부 읽고
-  n = Rio_readlineb(&rio, buf, MAX_CACHE_SIZE);
+  n = Rio_readnb(&rio, buf, MAX_CACHE_SIZE);
   //전부 쓴다.
   Rio_writen(p_connfd, buf, n);
 }
