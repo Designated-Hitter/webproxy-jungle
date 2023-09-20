@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
     clientlen = sizeof(clientaddr);
     //client의 connection request를 Accept. p_connfd = proxy의 connfd
     //p_connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);
-    //Malloc을 통해 connfd를 처리하기 위한 공간을 할당(여러개가 들어올 수 있기 때문에 각자 공간을 할당하여 메모리 주소가 충돌하지 않게 함) 
+    //Malloc을 통해 connfd를 처리하기 위한 공간을 할당(여러 요청이 들어올 수 있기 때문에 각자 공간을 할당하여 메모리 주소가 충돌하지 않게 함) 
     p_connfd = Malloc(sizeof(int));
     *p_connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);
 
