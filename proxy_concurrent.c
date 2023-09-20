@@ -16,6 +16,7 @@ void do_response(int p_connfd, int p_clientfd);
 int parse_uri(char *uri, char *uri_ptos, char *host, char *port);
 //이 함수는 쓰지를 않는데 선언을 안 해두면 채점이 안 된다...
 int parse_responsehdrs(rio_t *rp, int length);
+//using thread to make concurrent way
 void *thread(void *vargp);
 
 int main(int argc, char **argv) {
@@ -23,6 +24,7 @@ int main(int argc, char **argv) {
   char hostname[MAXLINE], port[MAXLINE];
   socklen_t clientlen;
   struct sockaddr_storage clientaddr;
+  //thread id
   pthread_t tid;
 
   if (argc != 2) {
@@ -35,7 +37,8 @@ int main(int argc, char **argv) {
   while(1) {
     clientlen = sizeof(clientaddr);
     //client의 connection request를 Accept. p_connfd = proxy의 connfd
-    // p_connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);
+    //p_connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);
+    //Malloc을 통해 connfd를 처리하기 위한 공간을 할당(여러개가 들어올 수 있기 때문에 각자 공간을 할당하여 메모리 주소가 충돌하지 않게 함) 
     p_connfd = Malloc(sizeof(int));
     *p_connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);
 
@@ -45,6 +48,7 @@ int main(int argc, char **argv) {
 
     // do_it(p_connfd);
     // Close(p_connfd);
+    // p_connfd를 통해 바로 connection하는 대신 thread를 열고, thread내부에서 connection을 수행하고 종료함.
     Pthread_create(&tid, NULL, thread, p_connfd);
   }
 
@@ -55,7 +59,9 @@ void *thread(void *vargp) {
 
   int clientfd = *((int *)vargp);
   Pthread_detach(pthread_self());
+  //할당한 공간 반환
   Free(vargp);
+  //connection을 수행
   do_it(clientfd);
   Close(clientfd);
   return NULL;
