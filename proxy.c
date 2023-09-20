@@ -16,12 +16,14 @@ void do_response(int p_connfd, int p_clientfd);
 int parse_uri(char *uri, char *uri_ptos, char *host, char *port);
 //이 함수는 쓰지를 않는데 선언을 안 해두면 채점이 안 된다...
 int parse_responsehdrs(rio_t *rp, int length);
+void *thread(void *vargp);
 
 int main(int argc, char **argv) {
-  int listenfd, p_connfd;
+  int listenfd, *p_connfd;
   char hostname[MAXLINE], port[MAXLINE];
   socklen_t clientlen;
   struct sockaddr_storage clientaddr;
+  pthread_t tid;
 
   if (argc != 2) {
     fprintf(stderr, "usage: %s <port>\n", argv[0]);
@@ -33,17 +35,31 @@ int main(int argc, char **argv) {
   while(1) {
     clientlen = sizeof(clientaddr);
     //client의 connection request를 Accept. p_connfd = proxy의 connfd
-    p_connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);
+    // p_connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);
+    p_connfd = Malloc(sizeof(int));
+    *p_connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);
 
     //display GET request
     Getnameinfo((SA *)&clientaddr, clientlen, hostname, MAXLINE, port, MAXLINE, 0);
     printf("Accepted connection from (%s, %s)\n", hostname, port);
 
-    do_it(p_connfd);
-    Close(p_connfd);
+    // do_it(p_connfd);
+    // Close(p_connfd);
+    Pthread_create(&tid, NULL, thread, p_connfd);
   }
 
   return 0;
+}
+
+void *thread(void *vargp) {
+
+  int clientfd = *((int *)vargp);
+  Pthread_detach(pthread_self());
+  Free(vargp);
+  do_it(clientfd);
+  Close(clientfd);
+  return NULL;
+  
 }
 //HTTP request line from client to proxy
 //-> GET http://www.google.com:80/index.html HTTP/1.1
