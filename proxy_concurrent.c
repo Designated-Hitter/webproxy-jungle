@@ -20,6 +20,7 @@ int parse_responsehdrs(rio_t *rp, int length);
 void *thread(void *vargp);
 
 int main(int argc, char **argv) {
+  //p_connfd는 Malloc을 통해 할당받을 메모리의 주소가 되므로 포인터 변수로 선언
   int listenfd, *p_connfd;
   char hostname[MAXLINE], port[MAXLINE];
   socklen_t clientlen;
@@ -58,6 +59,7 @@ int main(int argc, char **argv) {
 void *thread(void *vargp) {
 
   int clientfd = *((int *)vargp);
+  //connection 요청에 따라 생성된 피어 스레드를 메인 스레드로부터 분리함
   Pthread_detach(pthread_self());
   //할당한 공간 반환
   Free(vargp);
